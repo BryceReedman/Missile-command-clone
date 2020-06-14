@@ -3,13 +3,12 @@ class Missile {
   // y axis
   int yExplosion;
   // max radius of explosion before expire
-  int maxRadius = 40;
+  int maxRadius = 70;
   // vectors
   PVector pos;
   PVector vel;
   // used to check if missile object is old
   boolean expired = false;
-
   float angle;
 
   // explosion
@@ -19,7 +18,7 @@ class Missile {
   boolean isExploding;
 
 
-  Missile(PVector pos, float angle, boolean friendly) {
+  Missile(PVector pos, PVector vel, boolean friendly, float angle) {
     //create new missile
     // velocity will be in the direction of the missile launcher base
     if (!friendly) {
@@ -28,13 +27,13 @@ class Missile {
       yExplosion = mouseY;
     }
     this.pos = pos;
-    this.vel = PVector.fromAngle(radians(angle));
     this.friendly = friendly;
+    this.vel = vel;
     this.angle = angle;
   }
-
+  //once the missile has reached desired location, stop moving
   void update() {
-    if (!(pos.x >= yExplosion)) {
+    if (!(pos.y <= yExplosion)) {
       pos.add(vel);
     }
   }
@@ -44,51 +43,67 @@ class Missile {
       pushMatrix();
       translate(pos.x, pos.y);
       rectMode(CENTER);
-      rect(pos.x, pos.y, 5, 15);
-      rotate(radians(angle));
+      rotate(angle);
+      fill(255);
+      stroke(0);
+      rect(0, 0, 5, 15);
+
       translate(-pos.x, -pos.y);
       popMatrix();
+
+
     }
   }
 
 
   void explosion() {
-    if (pos.x >= yExplosion) {
-      isExploding = true;
+    if (pos.y <= yExplosion) {
+      isExploding = true; //<>//
 
       if (radius >= maxRadius) {
         shrink = true;
       }
       if ( !shrink) {
-        radius++;
+        radius++; //<>//
       } else {
-        radius--;
+        radius-= 2; //<>//
       }
-      ellipse(pos.x, pos.y, radius, radius);
+      if (!(radius <= 0)) { //<>//
+        ellipse(pos.x, pos.y, radius, radius);
+      }
     }
   }
 
 
-  void collision(Missile missile) {
-    if (missile.isExploding) {
+  void collision() {
+    if (this.isExploding) {
+      //missile collision check
       for (Missile other : missiles) {
-        if (other.pos.dist(pos) < radius) {
+        if (other.pos.dist(pos) < radius & other.isExploding == false) {
           other.expired = true;
         }
-        if (!missile.friendly) {
-          // implement building collision check
+        if (!this.friendly) {
+          //building collision check
+          for (Building building : bases) {
+            if (dist(building.x, height, pos.x, pos.y) < radius) {
+              building.notHit = false;
+            }
+          }
         }
       }
     }
   }
 }
 
+
+
 void iterate() {
   for (Missile a : missiles) {
     if (!a.expired) {
+      a.draw();
       a.update();
       a.explosion();
-      a.draw();
+     a.collision();
     }
   }
 }
